@@ -1,6 +1,7 @@
 import UserModel from "../models/user.model.js";
 import { genToken } from "../lib/utils.js";
 import bcrypt from "bcryptjs";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
     //    res.send("signup route");
@@ -104,6 +105,38 @@ export const logout = (req, res) => {
     }
 }
 
-export const updateProfile = (req, res)=>{
-    
+export const updateProfile = async (req, res)=>{
+    try{
+        const {profilePic} =  req.body;
+        const userId = req.user._id;    //protectRoute call this function as next(), and also adds user to req, hence we can access req.user
+        if(!profilePic){
+            return res.status(400).json({
+                message: "Profile photo is reuqired"
+            });
+        }
+        const upload_res = await cloudinary.uploader.upload(profilePic);
+        const updatedUser = UserModel.findByIdAndUpdate(userId, {
+            profilePic: upload_res.secure_url
+        }, {new: true});
+
+        res.status(200).json(updatedUser);
+    }
+    catch(error){
+        console.log("Error in update profile", error.message);
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+}
+
+export const checkAuth = (req, res)=>{
+    try{
+        res.status(200).json(req.user); //send the authenticated user back
+    }
+    catch(error){
+        console.log("Error in checkAuth controller", error.message);
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
 }
