@@ -105,29 +105,31 @@ export const logout = (req, res) => {
     }
 }
 
-export const updateProfile = async (req, res)=>{
-    try{
-        const {profilePic} =  req.body;
-        const userId = req.user._id;    //protectRoute call this function as next(), and also adds user to req, hence we can access req.user
-        if(!profilePic){
+export const updateProfile = async (req, res) => {
+    try {
+        const { profilePic } = req.body;
+        const userId = req.user._id;
+        if (!profilePic) {
             return res.status(400).json({
-                message: "Profile photo is reuqired"
+                message: "Profile photo is required",
             });
         }
         const upload_res = await cloudinary.uploader.upload(profilePic);
-        const updatedUser = UserModel.findByIdAndUpdate(userId, {
-            profilePic: upload_res.secure_url
-        }, {new: true});
-
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            userId,
+            {
+                profilePic: upload_res.secure_url,
+            },
+            { new: true }
+        );
         res.status(200).json(updatedUser);
-    }
-    catch(error){
+    } catch (error) {
         console.log("Error in update profile", error.message);
         res.status(500).json({
-            message: "Internal server error"
+            message: "Internal server error",
         });
     }
-}
+};
 
 export const checkAuth = (req, res)=>{
     try{
