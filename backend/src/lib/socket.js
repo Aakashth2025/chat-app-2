@@ -18,7 +18,7 @@ export function geReceiverSocketId(userId){
 
 const userMap = {}; //online users <userId,socketId>
 
-io.on("connection", (socket)=>{
+/*io.on("connection", (socket)=>{
     console.log("A user connected", socket.id);
     const userId = socket.handshake.query.userId;
     if(userId) userMap[userId] = socket.id;
@@ -29,6 +29,28 @@ io.on("connection", (socket)=>{
         delete userMap[userId];
         io.emit("getOnlineUsers", Object.keys(userMap));  //send events(online status) to all connected clients
         //after an user disconnected
+    });
+});*/
+
+io.on("connection", (socket) => {
+    console.log("A user connected", socket.id);
+
+    const userId = socket.handshake.query.userId;
+    if (userId) userMap[userId] = socket.id;
+
+    console.log("Current users:", userMap);
+
+    io.emit("getOnlineUsers", Object.keys(userMap));
+
+    socket.on("disconnect", (reason) => {
+        console.log("A user disconnected", socket.id);
+        console.log("Disconnect reason:", reason);
+
+        delete userMap[userId];
+
+        console.log("Current users after disconnect:", userMap);
+
+        io.emit("getOnlineUsers", Object.keys(userMap));
     });
 });
 export {io, app, server};
