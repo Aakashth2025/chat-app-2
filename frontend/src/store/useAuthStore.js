@@ -93,19 +93,47 @@ export const useAuthStore = create((set, get) => ({
     },
 
     connectSocket: async () => {
-        const { authUser } = get();
-        if (!authUser || get().socket?.connected) return;
-        const socket = io(BASE_URL, {
-            query: {
-                userId: authUser._id
-            }
-        });
-        socket.connect();
-        set({ socket: socket });
-        socket.on("getOnlineUsers", (online_people)=>{
-            set({onlineUsers: online_people});
-        })
-    },
+    const { authUser } = get();
+
+    if (!authUser) {
+        console.log("❌ No auth user");
+        return;
+    }
+
+    if (get().socket?.connected) {
+        console.log("✅ Socket already connected");
+        return;
+    }
+
+    console.log("Connecting socket to:", BASE_URL);
+
+    const socket = io(BASE_URL, {
+        query: {
+            userId: authUser._id,
+        },
+        withCredentials: true,
+        transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => {
+        console.log("✅ Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+        console.log("❌ Socket connection error:", err.message);
+    });
+
+    socket.on("disconnect", (reason) => {
+        console.log("🔌 Socket disconnected:", reason);
+    });
+
+    socket.on("getOnlineUsers", (online_people) => {
+        console.log("👥 Online users:", online_people);
+        set({ onlineUsers: online_people });
+    });
+
+    set({ socket });
+},
 
     disconnectSocket: async () => {
         if (get().socket?.connected) get().socket.disconnect();
