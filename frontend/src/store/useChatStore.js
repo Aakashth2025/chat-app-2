@@ -3,69 +3,70 @@ import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
 import { useAuthStore } from "./useAuthStore.js";
 
-export const useChatStore = create((set, get)=>({
+export const useChatStore = create((set, get) => ({
     messages: [],
     users: [],
     selectedUser: null,
-    isUsersLoading : false,
-    isMessagesLoading : false,
+    isUsersLoading: false,
+    isMessagesLoading: false,
 
-    getUsers: async () =>{
-        set({isUsersLoading: true});
-        try{
+    getUsers: async () => {
+        set({ isUsersLoading: true });
+        try {
             const res = await axiosInstance.get("/messages/users");
-            set({users: res.data});
+            set({ users: res.data });
         }
-        catch(error){
+        catch (error) {
             toast.error(error.response.data.message);
         }
-        finally{
-            set({isUsersLoading: false});
+        finally {
+            set({ isUsersLoading: false });
         }
     },
 
-    getMessages: async (userId) =>{
-        set({isMessagesLoading:true});
-        try{
+    getMessages: async (userId) => {
+        set({ isMessagesLoading: true });
+        try {
             const res = await axiosInstance.get(`/messages/${userId}`);
-            set({messages: res.data});
+            set({ messages: res.data });
         }
-        catch(error){
+        catch (error) {
             toast.error(error.response.data.message);
         }
-        finally{
-            set({isMessagesLoading:false});
+        finally {
+            set({ isMessagesLoading: false });
         }
     },
 
-    sendMessage: async (messageData)=>{
-        const {selectedUser, messages} = get();
-        try{
+    sendMessage: async (messageData) => {
+        const { selectedUser, messages } = get();
+        try {
             const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-            set({messages:[...messages, res.data]});
+            set({ messages: [...messages, res.data] });
         }
-        catch(error){
+        catch (error) {
             toast.error(error.response.data.message);
         }
     },
 
-    subscribeToMessages: ()=>{
-        const {selectedUser} = get();   //jisse baat kr rhre ho
-        if(!selectedUser)   return;
+    subscribeToMessages: () => {
+        const { selectedUser } = get();   //jisse baat kr rhre ho
+        if (!selectedUser) return;
 
         const socket = useAuthStore.getState().socket;
-        socket.on("newMsg", (newMsg)=>{
-            if(newMsg.senderId !== selectedUser._id)    return;
+        socket.on("newMsg", (newMsg) => {
+            const isMessageSentFromSelectedUser = newMsg.senderId === selectedUser._id;
+            if (!isMessageSentFromSelectedUser) return;
             set({
                 messages: [...get().messages, newMsg]
             })
         });
     },
 
-    unsubscribeFromMessages: ()=>{
+    unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket.off("newMsg");
     },
 
-    setSelectedUser: (selectedUser) => set({selectedUser})
+    setSelectedUser: (selectedUser) => set({ selectedUser })
 }));

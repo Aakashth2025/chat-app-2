@@ -15,6 +15,7 @@ const App = () =>{
   const {authUser, checkAuth, isCheckingAuth, onlineUsers} = useAuthStore();
   const {theme} = useThemeStore();
   console.log(onlineUsers);
+
   useEffect(()=>{
     checkAuth()
   }, [checkAuth]);
@@ -25,7 +26,7 @@ const App = () =>{
     <div className="flex items-center justify-center h-screen">
       <Loader className="size-10 animate-spin"></Loader>
     </div>
-  )
+  );
 
   return (
     <div data-theme={theme}>

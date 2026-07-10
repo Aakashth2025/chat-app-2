@@ -5,8 +5,7 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-//const BASE_URL = import.meta.env.MODE ==="development" ? "http://localhost:5001" : "/";
-const BASE_URL = import.meta.env.VITE_SOCKET_URL;
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
 export const useAuthStore = create((set, get) => ({
     authUser: null,
@@ -19,24 +18,17 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
-        console.log("🔍 Running checkAuth");
-
-        const res = await axiosInstance.get("/auth/check");
-
-        console.log("✅ checkAuth user:", res.data);
-
-        set({ authUser: res.data });
-
-        console.log("📞 Calling connectSocket()");
-        get().connectSocket();
-    }
-    catch (error) {
-        console.log("❌ Error in checkAuth:", error);
-        set({ authUser: null });
-    }
-    finally {
-        set({ isCheckingAuth: false });
-    }
+            const res = await axiosInstance.get("/auth/check");
+            set({ authUser: res.data });
+            get().connectSocket();
+        }
+        catch (error) {
+            console.log("Error in checkAuth:", error);
+            set({ authUser: null });
+        }
+        finally {
+            set({ isCheckingAuth: false });
+        }
     },
 
     signup: async (data) => {
@@ -54,7 +46,7 @@ export const useAuthStore = create((set, get) => ({
             set({ isSigningUp: false });
         }
     },
- 
+
     login: async (data) => {
         set({ isLoggingIn: true });
         try {
@@ -99,48 +91,23 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    connectSocket: async () => {
-    const { authUser } = get();
+    connectSocket: () => {
+        const { authUser } = get();
+        if (!authUser || get().socket?.connected) return;
 
-    if (!authUser) {
-        console.log("❌ No auth user");
-        return;
-    }
+        const socket = io(BASE_URL, {
+            query: {
+                userId: authUser._id,
+            },
+        });
+        socket.connect();
 
-    if (get().socket?.connected) {
-        console.log("✅ Socket already connected");
-        return;
-    }
+        set({ socket: socket });
 
-    console.log("Connecting socket to:", BASE_URL);
-
-    const socket = io(BASE_URL, {
-        query: {
-            userId: authUser._id,
-        },
-        withCredentials: true,
-        transports: ["websocket", "polling"],
-    });
-
-    socket.on("connect", () => {
-        console.log("✅ Socket connected:", socket.id);
-    });
-
-    socket.on("connect_error", (err) => {
-        console.log("❌ Socket connection error:", err.message);
-    });
-
-    socket.on("disconnect", (reason) => {
-        console.log("🔌 Socket disconnected:", reason);
-    });
-
-    socket.on("getOnlineUsers", (online_people) => {
-        console.log("👥 Online users:", online_people);
-        set({ onlineUsers: online_people });
-    });
-
-    set({ socket });
-},
+        socket.on("getOnlineUsers", (userIds) => {
+            set({ onlineUsers: userIds });
+        });
+    },
 
     disconnectSocket: async () => {
         if (get().socket?.connected) get().socket.disconnect();

@@ -13,8 +13,8 @@ const ChatContainer = () => {
     getMessages,
     isMessagesLoading,
     selectedUser,
+    subscribeToMessages,
     unsubscribeFromMessages,
-    subscribeToMessages
   } = useChatStore();
 
   const { authUser } = useAuthStore();

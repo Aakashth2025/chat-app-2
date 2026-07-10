@@ -7,13 +7,13 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors:{
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: ["http://localhost:5173"],
         credentials: true
     }
 });
 
 export function geReceiverSocketId(userId){
-    return userMap[userId]
+    return userMap[userId];
 }
 
 const userMap = {}; //online users <userId,socketId>
@@ -38,18 +38,11 @@ io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
     if (userId) userMap[userId] = socket.id;
 
-    console.log("Current users:", userMap);
-
     io.emit("getOnlineUsers", Object.keys(userMap));
 
     socket.on("disconnect", (reason) => {
         console.log("A user disconnected", socket.id);
-        console.log("Disconnect reason:", reason);
-
         delete userMap[userId];
-
-        console.log("Current users after disconnect:", userMap);
-
         io.emit("getOnlineUsers", Object.keys(userMap));
     });
 });
